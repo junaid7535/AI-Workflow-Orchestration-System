@@ -1,0 +1,66 @@
+{
+  "name": "agent-orchestration-system",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Agent orchestration system where everything is an agent",
+  "workspaces": [
+    "packages/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nielspeter/agent-orchestration-system.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nielspeter/agent-orchestration-system/issues"
+  },
+  "homepage": "https://github.com/nielspeter/agent-orchestration-system#readme",
+  "author": "",
+  "license": "MIT",
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "build:core": "npm run build -w @agent-system/core",
+    "build:web": "npm run build -w @agent-system/web",
+    "build:cli": "npm run build -w @agent-system/cli",
+    "dev": "npm run dev -w @agent-system/core",
+    "dev:web": "npm run dev -w @agent-system/web",
+    "dev:cli": "npm run dev -w @agent-system/cli",
+    "cli": "tsx packages/cli/src/index.ts",
+    "cli:serve": "npm run cli -- serve --open",
+    "test": "npm run test -w @agent-system/core",
+    "test:unit": "npm run test -w @agent-system/core",
+    "test:unit:coverage": "npm run test:coverage -w @agent-system/core",
+    "test:integration": "vitest run --config packages/core/vitest.config.integration.ts",
+    "test:all": "npm run test:unit && npm run test:integration",
+    "test:watch": "npm run test:watch -w @agent-system/core",
+    "lint": "eslint packages",
+    "lint:fix": "eslint packages --fix",
+    "format": "prettier --write packages",
+    "format:check": "prettier --check packages",
+    "check": "npm run lint && npm run format:check && npm run test",
+    "clean": "rm -rf packages/*/dist"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.60.0",
+    "@modelcontextprotocol/sdk": "^1.17.4",
+    "@types/uuid": "^10.0.0",
+    "ai": "^5.0.28",
+    "dotenv": "^16.4.5",
+    "gray-matter": "^4.0.3",
+    "openai": "^4.29.2",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@typescript-eslint/eslint-plugin": "^8.41.0",
+    "@typescript-eslint/parser": "^8.41.0",
+    "@vitest/coverage-v8": "^2.1.8",
+    "eslint": "^9.34.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
+    "tsx": "^4.7.1",
+    "typescript": "^5.9.2",
+    "vitest": "^2.1.8"
+  }
+}

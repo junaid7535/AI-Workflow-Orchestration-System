@@ -1,0 +1,262 @@
+import { afterEach, describe, expect, test } from 'vitest';
+import { AgentSystemBuilder } from '@/config/system-builder';
+import * as fs from 'fs/promises';
+
+describe('AgentSystemBuilder Tests', () => {
+  let cleanup: (() => Promise<void>) | null = null;
+
+  afterEach(async () => {
+    // Clean up any resources after each test
+    if (cleanup) {
+      await cleanup();
+      cleanup = null;
+    }
+  });
+
+  describe('Factory Methods', () => {
+    test('minimal() should create builder with no tools', async () => {
+      const result = await AgentSystemBuilder.minimal().build();
+      cleanup = result.cleanup;
+
+      expect(result.executor).toBeDefined();
+      expect(result.config).toBeDefined();
+      expect(result.toolRegistry).toBeDefined();
+      expect(result.toolRegistry.getAllTools()).toHaveLength(0);
+    });
+
+    test('default() should create builder with file tools', async () => {
+      const result = await AgentSystemBuilder.default().build();
+      cleanup = result.cleanup;
+
+      const toolNames = result.toolRegistry.getAllTools().map((t) => t.name);
+      expect(toolNames).toContain('read');
+      expect(toolNames).toContain('write');
+      expect(toolNames).toContain('list');
+      expect(toolNames).toContain('delegate');
+      expect(toolNames).toContain('todowrite');
+    });
+
+    test('full() should create builder with all tools', async () => {
+      const result = await AgentSystemBuilder.default().build();
+      cleanup = result.cleanup;
+
+      const toolNames = result.toolRegistry.getAllTools().map((t) => t.name);
+      expect(toolNames).toContain('read');
+      expect(toolNames).toContain('write');
+      expect(toolNames).toContain('list');
+      expect(toolNames).toContain('delegate');
+      expect(toolNames).toContain('todowrite');
+    });
+  });
+
+  describe('Builder Configuration', () => {
+    test('withModel() should set the model', async () => {
+      const modelName = process.env.MODEL || 'anthropic/claude-haiku-4-5';
+      const result = await AgentSystemBuilder.minimal().withModel(modelName).build();
+      cleanup = result.cleanup;
+
+      expect(result.config.model).toBe(modelName);
+    });
+
+    test('withAgentsFrom() should set agent directories', async () => {
+      const result = await AgentSystemBuilder.minimal()
+        .withAgentsFrom('./agents', './custom-agents')
+        .build();
+      cleanup = result.cleanup;
+
+      expect(result.config.agents.directories).toContain('./agents');
+      expect(result.config.agents.directories).toContain('./custom-agents');
+    });
+
+    test('withSafetyLimits() should set safety configuration', async () => {
+      const result = await AgentSystemBuilder.minimal()
+        .withSafetyLimits({ maxIterations: 100, maxDepth: 5 })
+        .build();
+      cleanup = result.cleanup;
+
+      expect(result.config.safety.maxIterations).toBe(100);
+      expect(result.config.safety.maxDepth).toBe(5);
+    });
+
+    test('withConsole() should set console configuration', async () => {
+      const result = await AgentSystemBuilder.minimal()
+        .withConsole({ verbosity: 'verbose' })
+        .build();
+      cleanup = result.cleanup;
+
+      expect(result.config.console).toEqual({ verbosity: 'verbose' });
+    });
+
+    test('withSessionId() should set session ID', async () => {
+      const sessionId = 'test-session-123';
+      const result = await AgentSystemBuilder.minimal().withSessionId(sessionId).build();
+      cleanup = result.cleanup;
+
+      expect(result.config.session.sessionId).toBe(sessionId);
+    });
+  });
+
+  describe('Tool Configuration', () => {
+    test('withDefaultTools() should add file and delegate tools', async () => {
+      const result = await AgentSystemBuilder.minimal().withDefaultTools().build();
+      cleanup = result.cleanup;
+
+      const toolNames = result.toolRegistry.getAllTools().map((t) => t.name);
+      expect(toolNames).toContain('read');
+      expect(toolNames).toContain('write');
+      expect(toolNames).toContain('list');
+      expect(toolNames).toContain('delegate');
+    });
+
+    test('withTodoTool() should add TodoWrite tool', async () => {
+      const result = await AgentSystemBuilder.minimal().withTodoTool().build();
+      cleanup = result.cleanup;
+
+      const toolNames = result.toolRegistry.getAllTools().map((t) => t.name);
+      expect(toolNames).toContain('todowrite');
+    });
+  });
+
+  describe('Config File Loading', () => {
+    test('fromConfigFile() should fail gracefully if file does not exist', async () => {
+      await expect(
+        AgentSystemBuilder.fromConfigFile('./non-existent-config.json')
+      ).rejects.toThrow();
+    });
+
+    test('fromConfigFile() should load config if file exists', async () => {
+      // Create a temporary config file
+      const configPath = './test-config.json';
+      const modelName = process.env.MODEL || 'anthropic/claude-haiku-4-5';
+      const config = {
+        model: modelName,
+        agents: { directories: ['./agents'] },
+        tools: { builtin: ['read', 'write'] },
+      };
+
+      await fs.writeFile(configPath, JSON.stringify(config, null, 2));
+
+      try {
+        const builder = await AgentSystemBuilder.fromConfigFile(configPath);
+        const result = await builder.build();
+        cleanup = result.cleanup;
+
+        expect(result.config.model).toBe(modelName);
+        expect(result.config.agents.directories).toContain('./agents');
+      } finally {
+        // Clean up test config file
+        await fs.unlink(configPath).catch(() => {});
+      }
+    });
+  });
+
+  describe('Programmatic Configuration (Code-First)', () => {
+    test('withProvidersConfig() should set providers config', async () => {
+      const providersConfig = {
+        providers: {
+          anthropic: {
+            type: 'native' as const,
+            apiKeyEnv: 'ANTHROPIC_API_KEY',
+            models: [
+              {
+                id: 'claude-haiku-4-5',
+                contextLength: 200000,
+                maxOutputTokens: 8192,
+              },
+            ],
+          },
+        },
+        behaviorPresets: {
+          test: {
+            temperature: 0.5,
+            top_p: 0.9,
+          },
+        },
+      };
+
+      const result = await AgentSystemBuilder.minimal()
+        .withProvidersConfig(providersConfig)
+        .build();
+      cleanup = result.cleanup;
+
+      expect(result.config.providersConfig).toBeDefined();
+      expect(result.config.providersConfig?.providers.anthropic).toBeDefined();
+      expect(result.config.providersConfig?.behaviorPresets?.test).toEqual({
+        temperature: 0.5,
+        top_p: 0.9,
+      });
+    });
+
+    test('withAPIKeys() should set API keys', async () => {
+      const apiKeys = {
+        ANTHROPIC_API_KEY: 'test-key-12345',
+        OPENROUTER_API_KEY: 'test-or-key',
+      };
+
+      const result = await AgentSystemBuilder.minimal().withAPIKeys(apiKeys).build();
+      cleanup = result.cleanup;
+
+      expect(result.config.apiKeys).toBeDefined();
+      expect(result.config.apiKeys?.ANTHROPIC_API_KEY).toBe('test-key-12345');
+      expect(result.config.apiKeys?.OPENROUTER_API_KEY).toBe('test-or-key');
+    });
+
+    test('withProvidersConfig() and withAPIKeys() should work together', async () => {
+      const providersConfig = {
+        providers: {
+          anthropic: {
+            type: 'native' as const,
+            apiKeyEnv: 'ANTHROPIC_API_KEY',
+          },
+        },
+      };
+
+      const apiKeys = {
+        ANTHROPIC_API_KEY: 'programmatic-key',
+      };
+
+      const result = await AgentSystemBuilder.minimal()
+        .withProvidersConfig(providersConfig)
+        .withAPIKeys(apiKeys)
+        .build();
+      cleanup = result.cleanup;
+
+      expect(result.config.providersConfig).toBeDefined();
+      expect(result.config.apiKeys).toBeDefined();
+    });
+
+    test('code-first configuration should not require any files', async () => {
+      // This test demonstrates that the system can work without any config files
+      const result = await AgentSystemBuilder.minimal()
+        .withAPIKeys({
+          ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || 'test-key',
+        })
+        .build();
+      cleanup = result.cleanup;
+
+      expect(result.executor).toBeDefined();
+      expect(result.toolRegistry).toBeDefined();
+      // No file reads should have occurred
+    });
+  });
+
+  describe('Build Result', () => {
+    test('build() should return complete BuildResult', async () => {
+      const result = await AgentSystemBuilder.default().build();
+      cleanup = result.cleanup;
+
+      expect(result).toHaveProperty('config');
+      expect(result).toHaveProperty('executor');
+      expect(result).toHaveProperty('toolRegistry');
+      expect(result).toHaveProperty('cleanup');
+      expect(typeof result.cleanup).toBe('function');
+    });
+
+    test('cleanup() should not throw errors', async () => {
+      const result = await AgentSystemBuilder.default().build();
+
+      // Should not throw
+      await expect(result.cleanup()).resolves.toBeUndefined();
+    });
+  });
+});

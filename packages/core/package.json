@@ -1,0 +1,78 @@
+{
+  "name": "@nielspeter/agent-orchestration-core",
+  "version": "1.1.0",
+  "type": "module",
+  "description": "Core agent orchestration system - autonomous agents with LLM providers",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./events": {
+      "types": "./dist/logging/event.logger.d.ts",
+      "import": "./dist/logging/event.logger.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "providers-config.json.example",
+    "providers-config.schema.json"
+  ],
+  "scripts": {
+    "build": "tsc && tsc-alias",
+    "dev": "tsx src/index.ts",
+    "test": "vitest run --config vitest.config.unit.ts",
+    "test:coverage": "vitest run --config vitest.config.unit.ts --coverage",
+    "test:watch": "vitest watch --config vitest.config.unit.ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build && npm test"
+  },
+  "keywords": [
+    "agent",
+    "orchestration",
+    "llm",
+    "anthropic",
+    "claude",
+    "openai",
+    "autonomous",
+    "ai",
+    "agents",
+    "mcp"
+  ],
+  "author": "Niels Peter Strandberg",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nielspeter/agent-orchestration-system.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/nielspeter/agent-orchestration-system/issues"
+  },
+  "homepage": "https://github.com/nielspeter/agent-orchestration-system#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.60.0",
+    "@modelcontextprotocol/sdk": "^1.17.4",
+    "@types/uuid": "^10.0.0",
+    "ai": "^5.0.28",
+    "dotenv": "^16.4.5",
+    "gray-matter": "^4.0.3",
+    "openai": "^4.29.2",
+    "uuid": "^11.1.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "tsc-alias": "^1.8.16",
+    "typescript": "^5.9.2"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "@agent-system/examples",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Example scripts for agent orchestration system",
+  "scripts": {
+    "build": "echo 'No build needed for examples'",
+    "coding-team": "tsx coding-team/coding-team.ts",
+    "configuration": "tsx configuration/configuration.ts",
+    "critical-illness": "tsx critical-illness-claim/critical-illness-claim.ts",
+    "critical-illness-structured": "tsx critical-illness-claim-structured/critical-illness-claim-structured.ts",
+    "default-agent": "tsx default-agent.ts",
+    "inline-agents": "tsx inline-agents.ts",
+    "logging": "tsx logging/logging.ts",
+    "mcp": "tsx mcp-integration.ts",
+    "memory-patterns": "tsx memory-patterns.ts",
+    "orchestration": "tsx orchestration/orchestration.ts",
+    "quickstart": "tsx quickstart/quickstart.ts",
+    "script-tools": "tsx script-tools/script-tools.ts",
+    "session-analyzer": "tsx session-analyzer/session-analyzer.ts",
+    "thinking": "tsx thinking/thinking.ts",
+    "udbud": "tsx udbud/udbud.ts",
+    "werewolf": "tsx werewolf-game/werewolf-game.ts",
+    "workflow-pipeline": "tsx workflow-pipeline/workflow-pipeline.ts",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "@agent-system/core": "*"
+  },
+  "devDependencies": {
+    "dotenv": "^16.4.5",
+    "tsx": "^4.7.1",
+    "typescript": "^5.9.3"
+  }
+}

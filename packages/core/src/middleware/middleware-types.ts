@@ -1,0 +1,76 @@
+import { BaseTool, ExecutionContext, Message } from '@/base-types';
+import { Agent, ModelConfig, NormalizedThinkingConfig } from '@/config/types';
+import { AgentLogger } from '@/logging';
+import { ILLMProvider } from '@/providers/llm-provider.interface';
+import { ProviderWithConfig } from '@/providers/provider-factory';
+
+/**
+ * Context object that flows through the middleware pipeline
+ * All state is stored here - middleware should not maintain internal state
+ */
+export interface MiddlewareContext {
+  // Input
+  agentName: string;
+  prompt: string;
+  executionContext: ExecutionContext;
+
+  // Agent and tools
+  agent?: Agent;
+  tools?: BaseTool[];
+
+  // LLM Provider
+  provider?: ILLMProvider;
+  modelConfig?: ProviderWithConfig['modelConfig'];
+
+  // Behavior settings (resolved from agent or defaults)
+  behaviorSettings?: {
+    temperature: number;
+    top_p: number;
+  };
+
+  // Conversation state
+  messages: Message[];
+
+  // Current iteration (for the execution loop)
+  iteration: number;
+
+  // LLM response
+  response?: Message;
+
+  // Final result
+  result?: string;
+
+  // Shared services
+  logger: AgentLogger;
+  modelName: string;
+  sessionId?: string;
+
+  // Tracing context
+  traceId?: string; // Unique ID for the entire execution chain
+  parentCallId?: string; // Parent tool call ID when delegated
+
+  // Control flow
+  shouldContinue: boolean;
+  error?: Error;
+
+  // Iteration tracking for child agents
+  hasUsedTools?: boolean;
+
+  // LLM metadata for usage tracking across tool calls
+  lastLLMMetadata?: import('@/session/types').LLMMetadata;
+
+  // Thinking/reasoning configuration
+  thinkingConfig?: NormalizedThinkingConfig;
+  providerModelConfig?: ModelConfig; // Model config from providers-config.json
+  thinkingMetrics?: {
+    totalTokensUsed: number;
+    totalCost: number;
+    contextUsagePercent: number;
+  };
+}
+
+/**
+ * Simple middleware function signature
+ * Similar to Express.js middleware
+ */
+export type Middleware = (ctx: MiddlewareContext, next: () => Promise<void>) => Promise<void>;
